@@ -10,8 +10,8 @@ def process_math_formula(element):
         if tex:
             latex_code = tex.text.strip()
             # 检查是否是行间公式
-            if element.get('display') == 'block':
-                return f"\n$${latex_code}$$\n"
+            if element.get('display') == 'block' or 'ltx_equation' in element.parent.get('class', []):
+                return f"\n$${latex_code}$$\n\n"
             else:
                 return f"${latex_code}$"
     except Exception as e:
@@ -46,14 +46,22 @@ def process_paragraph(element):
     """处理段落内容，包括文本和公式"""
     try:
         content = []
+        # 使用集合记录已处理的公式
+        processed_formulas = set()
+        
         for child in element.children:
             if child.name == 'math':
-                content.append(process_math_formula(child))
+                # 只处理行内公式，行间公式由外层处理
+                if child.get('display') != 'block':
+                    formula_id = child.get('id', '')
+                    if formula_id not in processed_formulas:
+                        processed_formulas.add(formula_id)
+                        content.append(process_math_formula(child))
             elif child.name == 'h4' and 'ltx_title_paragraph' in child.get('class', []):
-                content.append(process_section_title(child))
+                content.append('\n' + process_section_title(child))
             elif isinstance(child, str):
                 content.append(child.strip())
-        return ' '.join(content).strip()
+        return ' '.join(filter(None, content)).strip()
     except Exception as e:
         print(f"处理段落时出错: {str(e)}")
         return ""
@@ -61,9 +69,13 @@ def process_paragraph(element):
 def process_equation(element):
     """处理独立的数学公式"""
     try:
+        # 获取公式内容
         math = element.find('math')
         if math:
-            return process_math_formula(math)
+            tex = math.find('annotation', {'encoding': 'application/x-tex'})
+            if tex:
+                latex_code = tex.text.strip()
+                return f"\n$${latex_code}$$\n\n"
     except Exception as e:
         print(f"处理公式时出错: {str(e)}")
     return ""
@@ -76,6 +88,8 @@ def extract_arxiv_paper(url):
         soup = BeautifulSoup(response.text, 'html.parser')
         
         content = []
+        # 使用集合记录已处理的公式
+        processed_equations = set()
         
         # 提取标题
         title = soup.find('h1', class_='ltx_title_document')
@@ -91,13 +105,17 @@ def extract_arxiv_paper(url):
         # 处理主要内容
         main_content = soup.find('div', class_='ltx_page_main')
         if main_content:
-            for element in main_content.find_all(['div', 'p', 'math', 'table', 'h2', 'h3', 'h4']):
+            for element in main_content.find_all(['div', 'p', 'table', 'h2', 'h3', 'h4']):
                 if 'ltx_title' in element.get('class', []):
-                    content.append(process_section_title(element))
-                elif element.name == 'math':
-                    content.append(process_math_formula(element))
+                    content.append('\n' + process_section_title(element))
                 elif element.name == 'table' and 'ltx_equation' in element.get('class', []):
-                    content.append(process_equation(element))
+                    # 处理行间公式（equation环境）
+                    equation_id = element.get('id', '')
+                    if equation_id not in processed_equations:
+                        processed_equations.add(equation_id)
+                        equation_content = process_equation(element)
+                        if equation_content:
+                            content.append(equation_content)
                 elif element.name == 'p':
                     text = process_paragraph(element)
                     if text:
