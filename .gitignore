@@ -1,0 +1,7 @@
+# Ignore all Markdown files except README.md
+*.md
+*.html
+!README.md
+
+# Ignore __pycache__ directory
+__pycache__/

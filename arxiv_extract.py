@@ -80,7 +80,7 @@ def process_equation(element):
         print(f"处理公式时出错: {str(e)}")
     return ""
 
-def extract_arxiv_paper(url):
+def extract_arxiv_paper(url, output_file='paper.md'):
     """从ar5iv提取论文内容并转换为markdown格式"""
     try:
         response = requests.get(url)
@@ -127,9 +127,9 @@ def extract_arxiv_paper(url):
                     content.append(f"\n![{caption_text}]({img['src']})\n\n")
         
         # 保存为markdown文件
-        with open('paper.md', 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             f.writelines(content)
-        print("内容已保存到 paper.md")
+        print(f"内容已保存到 {output_file}")
         
     except Exception as e:
         print(f"发生错误: {str(e)}")

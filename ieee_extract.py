@@ -82,7 +82,8 @@ def process_paragraph(element):
         print(f"处理段落时出错: {str(e)}")
         return element.text
 
-def extract_ieee_paper(url):
+def extract_ieee_paper(url, output_file='paper.md'):
+    """从IEEE提取论文内容并转换为markdown格式"""
     chrome_options = Options()
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
@@ -151,9 +152,9 @@ def extract_ieee_paper(url):
                 continue
         
         # 保存内容
-        with open('paper.md', 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             f.writelines(content)
-        print("内容已保存到 paper.md")
+        print(f"内容已保存到 {output_file}")
         
     except Exception as e:
         print(f"发生错误: {str(e)}")
