@@ -164,4 +164,5 @@ def extract_ieee_paper(url):
 
 if __name__ == "__main__":
     url = "https://ieeexplore.ieee.org/document/10484206"
+    # url = "https://ieeexplore.ieee.org/document/10484206"
     extract_ieee_paper(url)
